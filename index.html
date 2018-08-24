@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    
+    <!-- Node Server Manager -->
+    <title>NSM - Node Server Manager</title>
+  
+    <style>
+      * {
+        font-family: "Trebuchet MS", Arial, Helvetica, sans-serif;
+      }
+
+      input {
+          /* width: 100%; */
+          padding: 12px 20px;
+          margin: 8px 0;
+          box-sizing: border-box;
+          border: 3px solid #4CAF50;
+          -webkit-transition: 0.5s;
+          transition: 0.5s;
+          outline: none;
+          color: white;
+          background-color: rgb(65, 167, 68);
+          box-shadow: inset 0px 0px 7px #777;
+          transition: 0.7s;
+      }
+
+      input:hover {
+        border: 3px solid rgb(75, 204, 79);
+      }
+
+      input:focus {
+          border: 3px solid rgb(75, 204, 79);
+          box-shadow: 0px 0px 8px #777;
+      }
+
+      .button {
+          border: none;
+          color: white;
+          padding: 16px 32px;
+          text-decoration: none;
+          margin: 4px 2px;
+          cursor: pointer;
+          transition: 0.5s;
+      }
+
+      .grayButton {
+        background-color: #aaa;
+      }
+
+      .greenButton {
+        background-color: #4CAF50;
+      }
+
+      .greenButton:hover {
+        background-color: rgb(75, 204, 79);
+        box-shadow: 0px 0px 9px #777;
+      }
+
+      .greenButton:active {
+        background-color: rgb(57, 134, 59);
+      }
+
+      #serversTable {
+          border-collapse: collapse;
+          width: 100%;
+          box-shadow: 0px 0px 7px #777;
+      }
+
+      #serversTable td, #serversTable th {
+          border: 1px solid #ddd;
+          padding: 8px;
+      }
+
+      #serversTable tr:nth-child(even){background-color: #f2f2f2;}
+
+      #serversTable tr:hover {background-color: #ddd;}
+
+      #serversTable th {
+          padding-top: 12px;
+          padding-bottom: 12px;
+          text-align: left;
+          background-color: #4CAF50;
+          color: white;
+      }
+    </style>
+  </head>
+  <body>
+    <div style="text-align:center;">
+      <input type="text" required="" value="unnamed" bind="serverName-on:change">
+      <input type="number" required="" value="8080" bind="port-on:input">
+      <button class="button greenButton" onclick="choosePath()" id="pathPicker">Choose Path</button>
+      <input type="file" webkitdirectory directory onchange="choseDirectory()" id="dir" style="display:none;">
+      <button class="button greenButton" onclick="newServer()">Create Server</button>
+    </div>
+<br>
+    <table id="serversTable" style="visibility: hidden;">
+      <thead>
+        <tr>
+          <th>Server Actions</th>
+          <th>Name</th>
+          <th>Port</th>
+          <th>Status</th>
+          <th>Path</th>
+        </tr>
+      </thead>
+      <tbody bind="servers:innerHTML">
+        <tr>
+          <td>
+            <button class="button greenButton" onclick="startStopServer(${index})" id="server${index}">Start</button>
+            <button class="button greenButton" onclick="deleteServer(${index})">Forget</button>
+          </td>
+          <td><b>${serverName}</b></td>
+          <td>${port}</td>
+          <td>${status}</td>
+          <td>${path}</td>
+        </tr>
+      </tbody>
+    </table>
+    <script src="./wieldy.js"></script>
+    <script>
+      function Server(name, port, path) {
+        var self = this;
+        self.path = path;
+        self.port = port;
+        self.status = "Standby";
+        self.serverName = name || "unnamed";
+      }
+
+      var app = new WieldyScope(document.body, {
+        servers: [],
+        serverName: "unnamed",
+        port: 8080,
+        path:""
+      });
+
+      function newServer() {
+        let name = app.serverName();
+        let port = app.port();
+        let path = app.path();
+        if (name) {
+          if (port && parseInt(port) != NaN) {
+            if (path && path.length > 2) {
+              app.servers.push(new Server(name, port, path));
+              app.serverName("unnamed");
+              app.port(8080);
+            } else {
+              alert("Server path required");
+            }
+          } else {
+            alert("Port is invalid");
+          }
+        } else {
+          alert("Name is invalid");
+        }
+      }
+
+      function deleteServer(id) {
+        app.servers.splice(id,1);
+      }
+
+      function choosePath() {
+        document.getElementById("dir").click();
+      }
+      function choseDirectory() {
+        app.path(document.getElementById("dir").files[0].path);
+      }
+
+      var start = function () { };
+      var stop = function () { };
+
+      function startStopServer(id) {
+        var running = app.servers()[id].status == "Running";
+        if (running) {
+          stop(id);
+          app.servers()[id].status = "Stopped";
+          app.servers.refresh();
+        } else {
+          start(id);
+          setTimeout(function (){
+              app.servers()[id].status = "Running";
+              app.servers.refresh();
+            },
+            Math.floor(Math.random()*1500)
+          );
+        }
+      }
+
+      // Load servers from memeory
+      if (JSON.parse(localStorage.getItem("_SERVERS"))) {
+        var data = JSON.parse(localStorage.getItem("_SERVERS"));
+        data.forEach(function (s){
+          s.status = "Standby";
+        });
+        app.servers(data);
+      }
+      // Once done loading ...
+      document.getElementById("serversTable").style.visibility = "visible";
+      app.servers.observe(function (data) {
+        localStorage.setItem("_SERVERS", JSON.stringify(data));
+        data.forEach(function (s,id) {
+          document.getElementById("server" + id).innerHTML = s.status == "Running" ? "Stop" : "Start";
+        })
+      });
+
+      // You can also require other files to run in this process
+      require('./renderer.js')
+    </script>
+  </body>
+</html>

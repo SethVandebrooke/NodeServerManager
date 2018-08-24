@@ -1,0 +1,24 @@
+{
+  "name": "nsm",
+  "version": "1.0.0",
+  "description": "Spin up web servers super fast",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron ."
+  },
+  "repository": "https://github.com/sethvandebrooke/nodeservermanager",
+  "keywords": [
+    "Node",
+    "Web",
+    "Server",
+    "Manager"
+  ],
+  "author": "Seth Vandebrooke",
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^2.0.0"
+  },
+  "dependencies": {
+    "express": "^4.16.3"
+  }
+}
